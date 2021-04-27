@@ -207,6 +207,12 @@ class StanfordCoreNLP(object):
         """
         This method allow to implement objects which can be used easily with the with statement.
         """
+        pass
+    
+    def __del__(self, exc_type, exc_val, exc_tb):
+        """
+        This method allow to implement objects which can be used easily with the with statement.
+        """
 
         self.close()
 
