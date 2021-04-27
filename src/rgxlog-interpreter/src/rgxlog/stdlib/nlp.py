@@ -55,6 +55,7 @@ def _run_installation():
         assert _is_installed_java()
 
 
+_run_installation()
 " ******************************************************************************************************************** "
 
 
@@ -107,7 +108,6 @@ POS = dict(ie_function=pos_wrapper,
 
 
 def lemma_wrapper(sentence):
-    _run_installation()
     with StanfordCoreNLP(NLP_DIR_PATH) as nlp:
         for res in nlp.lemma(sentence):
             yield res["token"], res["lemma"], res["span"]
@@ -123,7 +123,6 @@ Lemma = dict(ie_function=lemma_wrapper,
 
 
 def ner_wrapper(sentence):
-    _run_installation()
     with StanfordCoreNLP(NLP_DIR_PATH) as nlp:
         for res in nlp.ner(sentence):
             if res["ner"] != 'O':

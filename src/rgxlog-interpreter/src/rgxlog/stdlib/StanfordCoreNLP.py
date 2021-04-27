@@ -16,7 +16,7 @@ except ImportError:
 
 
 class StanfordCoreNLP(object):
-    def __init__(self, localDirOrURLServer, port=None, memory='4g', lang='en', timeout=1500, quiet=True,
+    def __init__(self, localDirOrURLServer, port=None, memory='2g', lang='en', timeout=1500, quiet=True,
                  loggingLevel=logging.WARNING, maxRetries=5):
         """
         The Constructor for StanfordCoreNLP class.

@@ -8,4 +8,4 @@ def spanner(line, cell=None):
 
     # TODO: make this print da strings
     result = magic_client.run_query(cell)
-    print(result)
+    #print(result)
