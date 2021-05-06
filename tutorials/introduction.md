@@ -47,7 +47,7 @@ current_python=sys.executable
     Collecting my-pkg-coldfear-rgxlog-interpreter
     [31m  Could not find a version that satisfies the requirement my-pkg-coldfear-rgxlog-interpreter (from versions: )[0m
     [31mNo matching distribution found for my-pkg-coldfear-rgxlog-interpreter[0m
-    
+
 
 In order to use RGXLog in jupyter notebooks, you must first import it:
 
@@ -79,7 +79,7 @@ uncle("bob", "greg")
           string	bob
           string	greg
     
-    
+
 
 # Local and free variables<a class="anchor" id="local_and_free_vars"></a>
 
@@ -144,7 +144,7 @@ b4 = "this is a multiline string" # b4 holds the same value as b3
         var_name	b4
         string	this is a multiline string
     
-    
+
 
 The assignment of integers is also very simple:
 
@@ -163,7 +163,7 @@ n2 = n # n2 = 4
         var_name	n2
         var_name	n
     
-    
+
 
  A span identifies a substring of a string by specifying its bounding indices. It is constructed from two integers.
  You can assign a span value like this:
@@ -185,7 +185,7 @@ span2 = span1 # span2 value is [3,7)
         var_name	span2
         var_name	span1
     
-    
+
 
 # Reading from a file<a class="anchor" id="read_a_file"></a>
 You can also perform a string assignment by reading from a file. You will need to provide a path to a file by either using a string literal or a string variable:
@@ -209,7 +209,7 @@ c = read(b) # c holds the same string value as a
         var_name	c
         var_name	b
     
-    
+
 
 # Derclaring a relation<a class="anchor" id="declare_relations"></a>
 RGXLog allows you to define and query relations.
@@ -249,7 +249,7 @@ new scores(str, int)
           decl_string
           decl_int
     
-    
+
 
 # Facts<a class="anchor" id="facts"></a>
 RGXLog is an extension of Datalog, a declarative logic programming language. In Datalog you can declare "facts", essentially adding tuples to a relation. To do it you use the following syntax:
@@ -313,7 +313,7 @@ goals("kronovi", 10)
           string	kronovi
           integer	10
     
-    
+
 
 # Rules<a class="anchor" id="rules"></a>
 Datalog allows you to deduce new tuples for a relation.
@@ -363,7 +363,7 @@ grandparent(X,Z) <- parent(X,Y), parent(Y,Z) # ',' is a short hand to the 'and' 
               free_var_name	Y
               free_var_name	Z
     
-    
+
 
 # Queries<a class="anchor" id="queries"></a>
 Querying is very simple in RGXLog. You can query by using constant values, local variables and free variables:
@@ -523,7 +523,7 @@ orders("cake", 0)
             free_var_name	X
             integer	4
     
-    
+
 
 You may have noticed that the query
 
@@ -592,7 +592,7 @@ annual_earning(Year,Amount) <- extract RGX<".*(?<Year>\d\d\d\d).*(?<Amount>\d+)\
             free_var_name	X
             free_var_name	Y
     
-    
+
 
 # Custom information extractors<a class="anchor" id="custom_ie"></a>
 RGXLog allows you to define and use your own information extractors. You can use them only in rule bodies (TBD). The following is the syntax for custom information extractors:
@@ -661,7 +661,7 @@ happy_grandmother(X) <- grandmother(X,Z),get_happy<sentence>(X)
           term_list
             free_var_name	X
     
-    
+
 
 # Additional small features<a class="anchor" id="small_features"></a>
 You can use line overflow escapes if you want to split your statements into multiple lines
@@ -679,7 +679,7 @@ k \
         var_name	k
         string	some string
     
-    
+
 
 # RGXLog program example<a class="anchor" id="example_program"></a>
 

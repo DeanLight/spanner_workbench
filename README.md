@@ -81,7 +81,7 @@ Here is a [python implementation of a Datalog library](https://github.com/pcarbo
   
   * We make naive high granularity operations and allow adding optimization execution passes that target certain subtree patterns
   
-  
+
 
 ## The REPL of the interpreter
 
