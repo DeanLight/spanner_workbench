@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.554">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Spannerlib - Building your own optimization</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="Spannerlib - Building your own optimization">
+<meta property="og:description" content="work bench">
+<meta property="og:site_name" content="Spannerlib">
+<meta name="twitter:title" content="Spannerlib - Building your own optimization">
+<meta name="twitter:description" content="work bench">
+<meta name="twitter:card" content="summary">
+</head>
+
+<body class="nav-sidebar floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">Spannerlib</span>
+    </a>
+  </div>
+        <div class="quarto-navbar-tools tools-end">
+</div>
+          <div id="quarto-search" class="" title="Search"></div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./introduction.html">Tutorials</a></li><li class="breadcrumb-item"><a href="./building_your_optimization.html">Building your own optimization</a></li></ol></nav>
+        <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Welcome to Spannerlib</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true">
+ <span class="menu-text">Tutorials</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./introduction.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Introduction</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./stdlib.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Standard library ie functions</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./advanced_usage.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Advanced Usage</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./building_your_optimization.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Building your own optimization</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./extended_version.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Advanced IE functions</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./covid-nlp/covid_pipeline.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Covid-19 NLP Pipeline</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true">
+ <span class="menu-text">src</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="false">
+ <span class="menu-text">Generic</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./general_utils.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">General Utils</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./primitive_types.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Primitive Types</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="false">
+ <span class="menu-text">Grammar &amp; Parsing</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./expected_grammar.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Expected Grammar</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./symbol_table.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Symbol Table</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./lark_passes.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Lark Passes</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./passes_utils.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Passes Utils</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./optimizations_passes.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Optimizations Passes</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="false">
+ <span class="menu-text">Engine</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./engine.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Engine</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./execution.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Execution</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="false">
+ <span class="menu-text">Graphs</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ast_node_types.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ast Nodes Types</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ie_function.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">IE Function</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./graphs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Graphs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./adding_inference_rules_to_term_graph.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Adding inference rules to term graph</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" aria-expanded="false">
+ <span class="menu-text">User-Interface</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./session.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Session</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#adding-optimization-passes-to-the-pass-stack" id="toc-adding-optimization-passes-to-the-pass-stack" class="nav-link active" data-scroll-target="#adding-optimization-passes-to-the-pass-stack">Adding Optimization Passes to the Pass Stack</a><a class="anchor nav-link" id="optimization_passes" data-scroll-target="undefined"></a></li>
+  <li><a href="#general-passes" id="toc-general-passes" class="nav-link" data-scroll-target="#general-passes">General Passes</a></li>
+  <li><a href="#optimization-passes" id="toc-optimization-passes" class="nav-link" data-scroll-target="#optimization-passes">Optimization Passes</a></li>
+  <li><a href="#rule-manipulation-optimization" id="toc-rule-manipulation-optimization" class="nav-link" data-scroll-target="#rule-manipulation-optimization">Rule-Manipulation Optimization</a>
+  <ul class="collapse">
+  <li><a href="#optimization-example-remove-useless-relations" id="toc-optimization-example-remove-useless-relations" class="nav-link" data-scroll-target="#optimization-example-remove-useless-relations">Optimization Example: Remove Useless Relations</a></li>
+  </ul></li>
+  <li><a href="#term-graph-structure-optimization" id="toc-term-graph-structure-optimization" class="nav-link" data-scroll-target="#term-graph-structure-optimization">Term Graph Structure Optimization</a></li>
+  <li><a href="#term-graph-structure" id="toc-term-graph-structure" class="nav-link" data-scroll-target="#term-graph-structure">Term Graph Structure</a></li>
+  <li><a href="#structure-optimization" id="toc-structure-optimization" class="nav-link" data-scroll-target="#structure-optimization">Structure Optimization</a></li>
+  <li><a href="#optimization-example-remove-redundant-project-nodes" id="toc-optimization-example-remove-redundant-project-nodes" class="nav-link" data-scroll-target="#optimization-example-remove-redundant-project-nodes">Optimization Example: Remove Redundant Project Nodes</a></li>
+  <li><a href="#optimization-example-overlapping-rules" id="toc-optimization-example-overlapping-rules" class="nav-link" data-scroll-target="#optimization-example-overlapping-rules">Optimization Example: Overlapping Rules</a>
+  <ul class="collapse">
+  <li><a href="#detailed-example-explanation" id="toc-detailed-example-explanation" class="nav-link" data-scroll-target="#detailed-example-explanation">Detailed Example Explanation</a></li>
+  </ul></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/DeanLight/spannerlib/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./introduction.html">Tutorials</a></li><li class="breadcrumb-item"><a href="./building_your_optimization.html">Building your own optimization</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">Building your own optimization</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
+<section id="adding-optimization-passes-to-the-pass-stack" class="level2">
+<h2 class="anchored" data-anchor-id="adding-optimization-passes-to-the-pass-stack">Adding Optimization Passes to the Pass Stack<a class="anchor" id="optimization_passes"></a></h2>
+</section>
+<section id="general-passes" class="level2">
+<h2 class="anchored" data-anchor-id="general-passes">General Passes</h2>
+<p>Before reading this section, we will briefly explain how passes work. There are five kinds of passes: 1. <strong>AST transformation passes</strong> - These passes convert the input program into AST. 2. <strong>semantic checks passes</strong> - These passes check the corectness of the program (i.e.&nbsp;one of the passes asserts that all the relations used in the program were registerred before). 3. <strong>AST execution passes</strong> - These passes traverse the AST and covert it to a <code>parse graph</code>. In addition they register new relations and handle variables assingments. 4. <strong>term graph passes</strong> - These passes adds rules into the <code>term graph</code>. 5. <strong>execution pass</strong> - This pass traverses the <code>parse graph</code> and finds queries. Then it computes them using the <code>term graph</code>.</p>
+</section>
+<section id="optimization-passes" class="level2">
+<h2 class="anchored" data-anchor-id="optimization-passes">Optimization Passes</h2>
+<p>There are two kinds of optimization passes: 1. The first one, manipulates rules before they are added to the <code>term graph</code>. 2. The second one, manipulates the structure of the <code>term graph</code>.</p>
+<p>note: It’s also possible to optimize the execution function/pass (but we won’t discuss it in this tutorial).</p>
+<p>In this section, we will implement two simple optimization passes, one of each kind.</p>
+</section>
+<section id="rule-manipulation-optimization" class="level2">
+<h2 class="anchored" data-anchor-id="rule-manipulation-optimization">Rule-Manipulation Optimization</h2>
+<p>Optimizations of this kind traverse the <code>parse_graph</code> and find rules that weren’t added to the <code>term graph</code>. Then, they update each rule - by modifying its body relations list.</p>
+<p>Here are some examples of possible optimization passes of this kind: 1. An optimization that removes duplicated relations from a rule. i.e., the rule <code>A(X) &lt;- B(X), C(X), B(X)</code> contains the relation <code>B(X)</code> twice. The optimization will transform the rule into <code>A(X) &lt;- B(X), C(X)</code>.</p>
+<ol start="2" type="1">
+<li>An optimization that removes useless relations from a rule. i.e.&nbsp;the rule <code>A(X) &lt;- B(X), C(Y)</code> contains the useless relation <code>C(Y)</code>. The optimization will transform the rule into <code>A(X) &lt;- B(X)</code>.</li>
+</ol>
+<p>Below is an implementation of the latter example:</p>
+<section id="optimization-example-remove-useless-relations" class="level3">
+<h3 class="anchored" data-anchor-id="optimization-example-remove-useless-relations">Optimization Example: Remove Useless Relations</h3>
+<p>Before jumping into the actual implementation, we will implement it in psuedo code:</p>
+<pre><code>1. a. Add the free variables inside the rule head into a relevant_free_variables set.
+   b. Mark all relations as useless, except those with no free variables (they are always relevant).
+   
+2. Find all relations which contain at least one free variable inside the relevant_free_variables set.
+
+3. Unmark these relations (since they are relevant).
+
+4. Add all free variables of the unmarked relations into the relevant_free_variables set.
+
+5. Repeat steps 2, 3 and 4 until the set of the marked relations converge.</code></pre>
+<p>note that this is a <code>[`fixed_point`](https://DeanLight.github.io/spannerlib/general_utils.html#fixed_point)</code> algorithm.</p>
+<div id="cell-11" class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> spannerlib.general_utils <span class="im">import</span> fixed_point</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> spannerlib.general_utils <span class="im">import</span> get_output_free_var_names</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> spannerlib.general_utils <span class="im">import</span> get_input_free_var_names</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Installation NLP failed
+cargo or rustup are not installed in $PATH. please install rust: https://rustup.rs/</code></pre>
+</div>
+</div>
+<p><code>get_output_free_var_names</code> documentation <code>get_input_free_var_names</code> documentation</p>
+<div id="cell-13" class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># first, lets implement the logic that removes useless relations from a rule</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> remove_useless_relations(rule):</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co">        Finds redundant relations and removes them from the rule.</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co">        </span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co">        @param rule: a rule.</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co">        """</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>        <span class="co"># step 1.a. Add the free variables inside the rule head into a relevant_free_variables set.</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>        relevant_free_vars <span class="op">=</span> <span class="bu">set</span>(rule.head_relation.get_term_list())  </span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>        <span class="co"># step 1.b. Mark all relations as useless, except those with no free variables (they are always relevant).</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>        initial_useless_relations_and_types <span class="op">=</span> [(rel, rel_type) <span class="cf">for</span> rel, rel_type <span class="kw">in</span> <span class="bu">zip</span>(rule.body_relation_list, rule.body_relation_type_list)</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>                                               <span class="cf">if</span> <span class="bu">len</span>(get_output_free_var_names(rel)) <span class="op">!=</span> <span class="dv">0</span>]</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>        <span class="co"># implement steps 2, 3 and 4</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>        <span class="kw">def</span> step_function(current_useless_relations_and_types):</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>            <span class="co">"""</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="co">            Used by fixed pont algorithm.</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="co">            @param current_useless_relations_and_types: current useless relations and their types</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="co">            @return: useless relations after considering the new relevant free vars.</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="co">            """</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>            next_useless_relations_and_types <span class="op">=</span> []</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>            <span class="co"># step 2 - Find all relations that has at least on free variable inside the relevant_free_variables set.</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> relation, rel_type <span class="kw">in</span> current_useless_relations_and_types:</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>                term_list <span class="op">=</span> get_output_free_var_names(relation)</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="bu">len</span>(relevant_free_vars.intersection(term_list)) <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>                    next_useless_relations_and_types.append((relation, rel_type))</span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>                <span class="cf">else</span>:</span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>                    <span class="co"># step 3 - Unmark relation. The relations isn't added to the useless list, and thus it's unmarked.</span></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>                    <span class="co"># step 4 - Add all the free variables of the unmarked relation into the relevant_free_variables set.</span></span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>                    relevant_free_vars.update(term_list)</span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>                    relevant_free_vars.update(get_input_free_var_names(relation))</span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> next_useless_relations_and_types</span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>        <span class="co"># step 5 - fixed ponint. note that the distance function returns zero if and only if len(x) equals len(y).</span></span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>        useless_relations_and_types <span class="op">=</span> fixed_point(start<span class="op">=</span>initial_useless_relations_and_types, step<span class="op">=</span>step_function, distance<span class="op">=</span><span class="kw">lambda</span> x, y: <span class="bu">int</span>(<span class="bu">len</span>(x) <span class="op">!=</span> <span class="bu">len</span>(y)))</span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>        <span class="co"># this part filters the useless relation from the rule</span></span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>        relevant_relations_and_types <span class="op">=</span> <span class="bu">set</span>(<span class="bu">zip</span>(rule.body_relation_list, rule.body_relation_type_list)).difference(useless_relations_and_types)</span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a>        new_body_relation_list, new_body_relation_type_list <span class="op">=</span> <span class="bu">zip</span>(<span class="op">*</span>relevant_relations_and_types)</span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a>        rule.body_relation_list <span class="op">=</span> <span class="bu">list</span>(new_body_relation_list)</span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>        rule.body_relation_type_list <span class="op">=</span> <span class="bu">list</span>(new_body_relation_type_list)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-14" class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> spannerlib.graphs <span class="im">import</span> GraphBase, EvalState, STATE, TYPE, VALUE</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> spannerlib.passes_utils <span class="im">import</span> ParseNodeType</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> spannerlib.lark_passes <span class="im">import</span> GenericPass  <span class="co"># base class of all the passes</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co"># finally, the implementation of the optimization pass</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> RemoveUselessRelationsFromRule(GenericPass):</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="co">    This pass removes duplicated relations from a rule.</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co">    For example, the rule A(X) &lt;- B(X), C(Y) contains a redundant relation (C(Y)).</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="co">    After this pass the rule will be A(X) &lt;- B(X).</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="co">    @note: in the rule A(X) &lt;- B(X, Y), C(Y); C(Y) is not redundant!</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, parse_graph: GraphBase, <span class="op">**</span>kwargs):</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.parse_graph <span class="op">=</span> parse_graph</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> run_pass(<span class="va">self</span>, <span class="op">**</span>kwargs):</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>        <span class="co"># get the new rules in the parse graph</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>        rules <span class="op">=</span> <span class="va">self</span>.parse_graph.get_all_nodes_with_attributes(<span class="bu">type</span><span class="op">=</span>ParseNodeType.RULE, state<span class="op">=</span>EvalState.NOT_COMPUTED)</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> rule_node_id <span class="kw">in</span> rules:</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>            rule_node <span class="op">=</span> <span class="va">self</span>.parse_graph[rule_node_id]</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>            rule <span class="op">=</span> rule_node[VALUE]</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>            remove_useless_relations(rule)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Modifying the pass stack looks like this:</p>
+<div id="cell-16" class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> print_pass_stack(pass_stack):</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""prints pass stack in a nice format"""</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> pass_ <span class="kw">in</span> pass_stack:</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="st">"</span><span class="ch">\t</span><span class="st">"</span> <span class="op">+</span> pass_.<span class="va">__name__</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>magic_session <span class="op">=</span> Session()  <span class="co"># reset the magic session</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>original_pass_stack <span class="op">=</span> magic_session.get_pass_stack()  <span class="co"># save the original pass stack</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>new_pass_stack <span class="op">=</span> original_pass_stack.copy()</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>term_graph_pass <span class="op">=</span> new_pass_stack.pop()  <span class="co"># remove last pass (this pass adds rules to term graph)</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>new_pass_stack.extend([RemoveUselessRelationsFromRule, term_graph_pass])</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>magic_session.set_pass_stack(new_pass_stack)</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Pass stack before:"</span>)</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>print_pass_stack(original_pass_stack)</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Pass stack after:"</span>)</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>print_pass_stack(magic_session.get_pass_stack())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Pass stack before:
+    RemoveTokens
+    FixStrings
+    CheckReservedRelationNames
+    ConvertSpanNodesToSpanInstances
+    ConvertStatementsToStructuredNodes
+    CheckDefinedReferencedVariables
+    CheckReferencedRelationsExistenceAndArity
+    CheckReferencedIERelationsExistenceAndArity
+    CheckRuleSafety
+    TypeCheckAssignments
+    TypeCheckRelations
+    SaveDeclaredRelationsSchemas
+    ResolveVariablesReferences
+    ExecuteAssignments
+    AddStatementsToNetxParseGraph
+    AddRulesToTermGraph
+
+Pass stack after:
+    RemoveTokens
+    FixStrings
+    CheckReservedRelationNames
+    ConvertSpanNodesToSpanInstances
+    ConvertStatementsToStructuredNodes
+    CheckDefinedReferencedVariables
+    CheckReferencedRelationsExistenceAndArity
+    CheckReferencedIERelationsExistenceAndArity
+    CheckRuleSafety
+    TypeCheckAssignments
+    TypeCheckRelations
+    SaveDeclaredRelationsSchemas
+    ResolveVariablesReferences
+    ExecuteAssignments
+    AddStatementsToNetxParseGraph
+    RemoveUselessRelationsFromRule
+    AddRulesToTermGraph</code></pre>
+</div>
+</div>
+<p>Now let’s look at the effect of this pass on the parse graph:</p>
+<div id="cell-18" class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>commands <span class="op">=</span> <span class="st">"""</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="st">new Good(int)</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="st">new Bad(int)</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="st">Example(X) &lt;- Good(X), Bad(Y)</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> run_commands_and_print_parse_graph(session):</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    session.run_commands(commands)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(session._parse_graph)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Parse graph of unmodified pass stack:</span><span class="ch">\n</span><span class="st">"</span>)</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>run_commands_and_print_parse_graph(Session()) </span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Parse graph after adding optimization pass:</span><span class="ch">\n</span><span class="st">"</span>)</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>run_commands_and_print_parse_graph(magic_session) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Parse graph of unmodified pass stack:
+
+(__spannerlog_root) (computed) root
+    (0) (computed) relation_declaration: Good(int)
+    (1) (computed) relation_declaration: Bad(int)
+    (2) (computed) rule: Example(X) &lt;- Good(X), Bad(Y)
+
+
+Parse graph after adding optimization pass:
+
+(__spannerlog_root) (computed) root
+    (0) (computed) relation_declaration: Good(int)
+    (1) (computed) relation_declaration: Bad(int)
+    (2) (computed) rule: Example(X) &lt;- Good(X)
+</code></pre>
+</div>
+</div>
+<p>Notice the difference in the rule node!</p>
+</section>
+</section>
+<section id="term-graph-structure-optimization" class="level2">
+<h2 class="anchored" data-anchor-id="term-graph-structure-optimization">Term Graph Structure Optimization</h2>
+<p>Optimizations of this kind traverse the <code>term_graph</code> and modify its structure.</p>
+</section>
+<section id="term-graph-structure" class="level2">
+<h2 class="anchored" data-anchor-id="term-graph-structure">Term Graph Structure</h2>
+<p>Before reading on, it is important to understand how the <code>[`TermGraph`](https://DeanLight.github.io/spannerlib/graphs.html#termgraph)</code> looks like in order to understand the terminology used - there is detailed documentation inside the class docstring.</p>
+</section>
+<section id="structure-optimization" class="level2">
+<h2 class="anchored" data-anchor-id="structure-optimization">Structure Optimization</h2>
+<p>Here are some examples of possible optimization passes of this kind: 1. An optimization that removes join nodes which have only one child relation. Note: this optimization already exists so there is no need to implement it.</p>
+<ol start="2" type="1">
+<li>An optimization that removes project nodes whose input is a single-column relation.</li>
+</ol>
+<p>Here’s the implementation of the second example:</p>
+</section>
+<section id="optimization-example-remove-redundant-project-nodes" class="level2">
+<h2 class="anchored" data-anchor-id="optimization-example-remove-redundant-project-nodes">Optimization Example: Remove Redundant Project Nodes</h2>
+<p>The following optimization will traverse the term graph and find all project nodes that has input relation with arity of one.<br> In this case, the project node is redundant and therefore, we remove it from the term graph.</p>
+<p>Before jumping into the actual implementation, we will implement it in a psuedo code:</p>
+<pre><code>1. Find all project nodes and their union nodes parents (inside the term graph).
+
+2. For each project node
+
+    2.1. Check if the arity of the project node's input relation is one, using the following steps:
+        a. get project's node child - we will denote it as child_node.
+        b. if type of child_node is GET_REL or RULE_REL or CALC node child, return true if arity of the relation stored in child_node is one.
+        c. if type of child_node is SELECT, return true if there is only one free variable in the relation stored in the child of the child_node. 
+        d. if type of child_node is project:
+              (i). get input relaations from all of it's children nodes
+              (ii). return true if the arity of the join of all the input relations is one.
+              
+    2.2 if has arity of one, remove the node from the graph by connecting it's child to it's parent.</code></pre>
+<div id="cell-27" class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># helper function</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> is_relation_has_one_free_var(relation) <span class="op">-&gt;</span> <span class="bu">bool</span>:</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co">    Check whether relation is only one free variable.</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="co">    @param relation_: a relation or an ie_relation.</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">len</span>(relation.get_term_list()) <span class="op">==</span> <span class="dv">1</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-28" class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> spannerlib.graphs <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="co"># this function implements step 2 in the pseudo code</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> is_input_relation_of_node_has_arity_of_one(term_graph: TermGraphBase, node_id) <span class="op">-&gt;</span> <span class="bu">bool</span>:</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="co">    @param node_id: id of the node.</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="co">    @note: we expect id of project/join node.</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="co">    @return: the arity of the relation that the node gets during the execution.</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># staep 2.1.a: note that this methods suppose to work for both project nodes and join nodes.</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># project nodes always have one child while join nodes always have more than one child.</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># for that reason, we traverse all the children of the node.</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>    node_ids <span class="op">=</span> term_graph.get_children(node_id)</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>    <span class="co"># used to compute arity of final relation</span></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>    free_vars: Set[<span class="bu">str</span>] <span class="op">=</span> <span class="bu">set</span>()</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> node_id <span class="kw">in</span> node_ids:</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>        node_attrs <span class="op">=</span> term_graph[node_id]</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>        node_type <span class="op">=</span> node_attrs[TYPE]</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>        <span class="co"># step 2.1.b</span></span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> node_type <span class="kw">in</span> (TermNodeType.GET_REL, TermNodeType.RULE_REL, TermNodeType.CALC):</span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>            relation <span class="op">=</span> node_attrs[VALUE]</span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>            <span class="co"># if relation has more than one free var we can't prune the project</span></span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="kw">not</span> is_relation_has_one_free_var(relation):</span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span> <span class="va">False</span></span>
+<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a>            free_vars <span class="op">|=</span> <span class="bu">set</span>(relation.get_term_list())</span>
+<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a>        <span class="co"># step 2.1.c</span></span>
+<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a>        <span class="cf">elif</span> node_type <span class="kw">is</span> TermNodeType.SELECT:</span>
+<span id="cb12-33"><a href="#cb12-33" aria-hidden="true" tabindex="-1"></a>            relation_child_id <span class="op">=</span> <span class="bu">next</span>(<span class="bu">iter</span>(term_graph.get_children(node_id)))</span>
+<span id="cb12-34"><a href="#cb12-34" aria-hidden="true" tabindex="-1"></a>            relation <span class="op">=</span> term_graph[relation_child_id][VALUE]</span>
+<span id="cb12-35"><a href="#cb12-35" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="kw">not</span> is_relation_has_one_free_var(relation):</span>
+<span id="cb12-36"><a href="#cb12-36" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span> <span class="va">False</span></span>
+<span id="cb12-37"><a href="#cb12-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-38"><a href="#cb12-38" aria-hidden="true" tabindex="-1"></a>            relation_free_vars <span class="op">=</span> [var <span class="cf">for</span> var, var_type <span class="kw">in</span> <span class="bu">zip</span>(relation.get_term_list(), relation.get_type_list()) <span class="cf">if</span> var_type <span class="kw">is</span> DataTypes.free_var_name]</span>
+<span id="cb12-39"><a href="#cb12-39" aria-hidden="true" tabindex="-1"></a>            free_vars <span class="op">|=</span> <span class="bu">set</span>(relation_free_vars)</span>
+<span id="cb12-40"><a href="#cb12-40" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb12-41"><a href="#cb12-41" aria-hidden="true" tabindex="-1"></a>        <span class="co"># step 2.1.d</span></span>
+<span id="cb12-42"><a href="#cb12-42" aria-hidden="true" tabindex="-1"></a>        <span class="cf">elif</span> node_type <span class="kw">is</span> TermNodeType.JOIN:</span>
+<span id="cb12-43"><a href="#cb12-43" aria-hidden="true" tabindex="-1"></a>            <span class="co"># the input of project node is the same as the input of the join node</span></span>
+<span id="cb12-44"><a href="#cb12-44" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> is_input_relation_of_node_has_arity_of_one(term_graph, node_id)</span>
+<span id="cb12-45"><a href="#cb12-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-46"><a href="#cb12-46" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">len</span>(free_vars) <span class="op">==</span> <span class="dv">1</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-29" class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># finally, lets implement the optimization pass class</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> PruneUnnecessaryProjectNodes(GenericPass):</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co">    This class prunes project nodes that gets a relation with one column (therefore, the project is redundant).</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="co">    For example, the rule A(X) &lt;- B(X) will yield the following term graph:</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="co">        rule_rel node (of A)</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="co">            union node</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="co">                project node (on X)</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="co">                   get_rel node (get B)</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="co">        since we project a relation with one column, after this pass the term graph will be:</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a><span class="co">        rule_rel node (of A)</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a><span class="co">            union node</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a><span class="co">                get_rel node (get B)</span></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, term_graph: TermGraphBase, <span class="op">**</span>kwargs):</span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.term_graph <span class="op">=</span> term_graph</span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> run_pass(<span class="va">self</span>, <span class="op">**</span>kwargs):</span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.prune_project_nodes()</span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> prune_project_nodes(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""</span></span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a><span class="co">        Prunes the redundant project nodes.</span></span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a><span class="co">        """</span></span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a>        project_nodes <span class="op">=</span> <span class="va">self</span>.term_graph.get_all_nodes_with_attributes(<span class="bu">type</span><span class="op">=</span>TermNodeType.PROJECT)</span>
+<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> project_id <span class="kw">in</span> project_nodes:</span>
+<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> is_input_relation_of_node_has_arity_of_one(<span class="va">self</span>.term_graph, project_id):</span>
+<span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a>                <span class="co"># step 2.2</span></span>
+<span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.term_graph.add_edge(<span class="va">self</span>.term_graph.get_parent(project_id), <span class="va">self</span>.term_graph.get_child(project_id))</span>
+<span id="cb13-37"><a href="#cb13-37" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.term_graph.remove_node(project_id)</span>
+<span id="cb13-38"><a href="#cb13-38" aria-hidden="true" tabindex="-1"></a>                </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The next step is adding this pass to the pass stack:</p>
+<div id="cell-31" class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>magic_session <span class="op">=</span> Session()  <span class="co"># reset the magic_session</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>new_pass_stack <span class="op">=</span> magic_session.get_pass_stack()</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>new_pass_stack.append(PruneUnnecessaryProjectNodes)</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>magic_session.set_pass_stack(new_pass_stack)</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"New pass stack:"</span>)</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>print_pass_stack(magic_session.get_pass_stack())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>New pass stack:
+    RemoveTokens
+    FixStrings
+    CheckReservedRelationNames
+    ConvertSpanNodesToSpanInstances
+    ConvertStatementsToStructuredNodes
+    CheckDefinedReferencedVariables
+    CheckReferencedRelationsExistenceAndArity
+    CheckReferencedIERelationsExistenceAndArity
+    CheckRuleSafety
+    TypeCheckAssignments
+    TypeCheckRelations
+    SaveDeclaredRelationsSchemas
+    ResolveVariablesReferences
+    ExecuteAssignments
+    AddStatementsToNetxParseGraph
+    AddRulesToTermGraph
+    PruneUnnecessaryProjectNodes</code></pre>
+</div>
+</div>
+<p>Finally, lets see how this pass modifies the term graph:</p>
+<div id="cell-33" class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>commands <span class="op">=</span> <span class="st">"""</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="st">new B(int)</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="st">A(X) &lt;- B(X)</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> run_commands_and_print_term_graph(session):</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    session.run_commands(commands)</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(session._term_graph)</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Term graph of unmodified pass stack:</span><span class="ch">\n</span><span class="st">"</span>)</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>run_commands_and_print_term_graph(Session()) </span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Term graph after adding optimization pass:</span><span class="ch">\n</span><span class="st">"</span>)</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>run_commands_and_print_term_graph(magic_session) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Term graph of unmodified pass stack:
+
+(__spannerlog_root) (not_computed) root
+    (A) (not_computed) rule_rel: A(X)
+        (0) (not_computed) union
+            (1) (not_computed) project: ['X']
+                (2) (not_computed) get_rel: B(X)
+
+DependencyGraph is:
+__spannerlog_root
+    A
+
+
+Term graph after adding optimization pass:
+
+(__spannerlog_root) (not_computed) root
+    (A) (not_computed) rule_rel: A(X)
+        (0) (not_computed) union
+            (2) (not_computed) get_rel: B(X)
+
+DependencyGraph is:
+__spannerlog_root
+    A
+</code></pre>
+</div>
+</div>
+<p>Notice the changes in the term_graph’s structure!</p>
+</section>
+<section id="optimization-example-overlapping-rules" class="level2">
+<h2 class="anchored" data-anchor-id="optimization-example-overlapping-rules">Optimization Example: Overlapping Rules</h2>
+<p>Another optimization example, this time without an implementation. It does the following: 1. Finds overlapping structure of rules. 2. Merges the overlapping structure and adds it to the term graph.</p>
+<section id="detailed-example-explanation" class="level3">
+<h3 class="anchored" data-anchor-id="detailed-example-explanation">Detailed Example Explanation</h3>
+<p>Let’s look at the following example:</p>
+<pre><code>&gt;&gt;&gt; D(X,Y) &lt;- A(X),B(Y),C(X,Y,Z)
+&gt;&gt;&gt; E(X,Y) &lt;- A(X),C(X,Y,Z), F(Z)
+&gt;&gt;&gt; x(X,Y) &lt;- E(X,Y)
+&gt;&gt;&gt; x(X,Y) &lt;- D(X,Y)</code></pre>
+<p>Without merging terms with overlapping structures, this would naively generate something that abstractly looks like this: <!--
+ digraph G {
+   D_and [label="and"]
+   E_and [label="and"]
+   x->OR [style=dotted]
+   E->E_and [style=dotted]
+   D->D_and [style=dotted]
+   OR -> {D_and,E_and}
+   D_and ->{A,B,C}
+   E_and -> {A,C,F} 
+ }
+--></p>
+<div id="cell-39" class="cell">
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="building_your_optimization_files/figure-html/cell-12-output-1.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The weakness with this approach is that <code>A AND C</code> is computed twice.</p>
+<p>A version of the term graph that takes care to merge terms with overlapping structures would look more like this: <!--
+ digraph G {
+   D_and [label="and"]
+   E_and [label="and"]
+   x->OR [style=dotted]
+   E->E_and [style=dotted]
+   D->D_and [style=dotted]
+   OR -> {D_and,E_and}
+   D_and ->{and,B}
+   E_and -> {and,F} 
+   and -> {A,C}
+ }
+ --></p>
+<div id="cell-41" class="cell">
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="building_your_optimization_files/figure-html/cell-13-output-1.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Here, we realized that A,C is a joint component and that we need only compute it once. This would be the automatic equivalent of a smart programmer, refactoring the query above to look like</p>
+<pre><code>&gt;&gt;&gt; TEMP(X,Y,Z) &lt;- A(X), C(X,Y,Z)
+&gt;&gt;&gt; D(X,Y) &lt;- B(Y),TEMP(X,Y,Z)
+&gt;&gt;&gt; E(X,Y) &lt;- TEMP(X,Y,Z), F(Z)
+&gt;&gt;&gt; x(X,Y) &lt;- E(X,Y)
+&gt;&gt;&gt; x(X,Y) &lt;- D(X,Y)</code></pre>
+<p>Here’s a pseudo implementation of this pass:</p>
+<pre><code>1. get all the registered rules by using term_graph.get_all_rules).
+
+2. find overlapping structure between rules (this step can be implemented in many different ways).
+
+3. create new rule that consists of the overlapping structure.
+
+4. add this new rule to the term graph by using term_graph.add_rule_to_term_graph.
+
+5. updated the previous rule to use the newly created rule.
+
+6. added the rules to the term graph.
+
+7. delete the previous versions of the rule from the term graph by using term_graph.remove_rule.</code></pre>
+<p>For example, if the following rules were registered: 1. <code>D(X,Y) &lt;- A(X),B(Y),C(X,Y,Z)</code> 2. <code>E(X,Y) &lt;- A(X),C(X,Y,Z), F(Z)</code></p>
+<p>In the second step of the algorithm, we will find that both rules share the structure <code>A(X),C(X,Y,Z)</code>.<br> In the third step we will create a new relation <code>TEMP(X,Y,Z) &lt;- A(X), C(X,Y,Z)</code>, and add it to the term graph.<br> In the fifth step we will modify to original rules in the following way: 1. <code>D(X,Y) &lt;- B(Y),TEMP(X,Y,Z)</code> 2. <code>E(X,Y) &lt;- TEMP(X,Y,Z), F(Z)</code></p>
+<p>And then we will add them to the term graph.<br> The last step will delete the old rules from the term graph.</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/DeanLight\.github\.io\/spannerlib");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/DeanLight/spannerlib/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>
